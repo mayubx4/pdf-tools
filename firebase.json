@@ -1,7 +1,7 @@
 {
   "hosting": {
     "public": "build/generic",
-    "site":"signing-tool",
+    "site":"pdf-tools",
     "ignore": [
       "firebase.json",
       "**/.*",

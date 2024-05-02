@@ -1,5 +1,5 @@
 {
   "projects": {
-    "default": "dev-load--project"
+    "default": "load-stage"
   }
 }

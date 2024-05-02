@@ -177,6 +177,9 @@ const PDFViewerApplication = {
   _nimbusDataPromise: null,
   _caretBrowsing: null,
   _isScrolling: false,
+  remoteFileData: null,
+  apiUrl: "https://api-golive.loadsecuresystems.com", // stage
+  // apiUrl: "https://api.loadsecuresystems.com", // production
 
   // Called once when the document is loaded.
   async initialize(appConfig) {
@@ -354,10 +357,92 @@ const PDFViewerApplication = {
   /**
    * @private
    */
+  _forceCssTheme() {
+    const cssTheme = AppOptions.get("viewerCssTheme");
+    if (
+      cssTheme === ViewerCssTheme.AUTOMATIC ||
+      !Object.values(ViewerCssTheme).includes(cssTheme)
+    ) {
+      return;
+    }
+    try {
+      const styleSheet = document.styleSheets[0];
+      const cssRules = styleSheet?.cssRules || [];
+      for (let i = 0, ii = cssRules.length; i < ii; i++) {
+        const rule = cssRules[i];
+        if (
+          rule instanceof CSSMediaRule &&
+          rule.media?.[0] === "(prefers-color-scheme: dark)"
+        ) {
+          if (cssTheme === ViewerCssTheme.LIGHT) {
+            styleSheet.deleteRule(i);
+            return;
+          }
+          // cssTheme === ViewerCssTheme.DARK
+          const darkRules =
+            /^@media \(prefers-color-scheme: dark\) {\n\s*([\w\s-.,:;/\\{}()]+)\n}$/.exec(
+              rule.cssText
+            );
+          if (darkRules?.[1]) {
+            styleSheet.deleteRule(i);
+            styleSheet.insertRule(darkRules[1], i);
+          }
+          return;
+        }
+      }
+    } catch (reason) {
+      console.error(`_forceCssTheme: "${reason?.message}".`);
+    }
+  },
+
+  /**
+   * @private
+   */
+  _forceCssTheme() {
+    const cssTheme = AppOptions.get("viewerCssTheme");
+    if (
+      cssTheme === ViewerCssTheme.AUTOMATIC ||
+      !Object.values(ViewerCssTheme).includes(cssTheme)
+    ) {
+      return;
+    }
+    try {
+      const styleSheet = document.styleSheets[0];
+      const cssRules = styleSheet?.cssRules || [];
+      for (let i = 0, ii = cssRules.length; i < ii; i++) {
+        const rule = cssRules[i];
+        if (
+          rule instanceof CSSMediaRule &&
+          rule.media?.[0] === "(prefers-color-scheme: dark)"
+        ) {
+          if (cssTheme === ViewerCssTheme.LIGHT) {
+            styleSheet.deleteRule(i);
+            return;
+          }
+          // cssTheme === ViewerCssTheme.DARK
+          const darkRules =
+            /^@media \(prefers-color-scheme: dark\) {\n\s*([\w\s-.,:;/\\{}()]+)\n}$/.exec(
+              rule.cssText
+            );
+          if (darkRules?.[1]) {
+            styleSheet.deleteRule(i);
+            styleSheet.insertRule(darkRules[1], i);
+          }
+          return;
+        }
+      }
+    } catch (reason) {
+      console.error(`_forceCssTheme: "${reason?.message}".`);
+    }
+  },
+
+  /**
+   * @private
+   */
   async _initializeViewerComponents() {
     const { appConfig, externalServices, l10n } = this;
 
-    const eventBus = AppOptions.get("isInAutomation")
+    const eventBus = externalServices.isInAutomation
       ? new AutomationEventBus()
       : new EventBus();
     this.eventBus = eventBus;
@@ -605,7 +690,43 @@ const PDFViewerApplication = {
       };
     }
   },
-
+  async fetchPdf(file) {
+    const pdfLoader = document.getElementById("pdfLoader");
+    if (file) {
+      try {
+        const queryParams = file.split("/");
+        const docID = sessionStorage.getItem("docId");
+        if (docID == queryParams[0]) {
+          pdfLoader.style.display = "none";
+          const uploaded = document.getElementById("uploaded");
+          uploaded.style.display = "flex";
+        } else {
+          let remoteFileResponse = await (
+            await fetch(`${this.apiUrl}/load/${queryParams[0]}/signature`)
+          ).json();
+          console.log(remoteFileResponse);
+          this.remoteFileData = {
+            url: file,
+            base64PdfData: remoteFileResponse.document.docData,
+            poId: remoteFileResponse.document.p,
+            type: remoteFileResponse.document.t,
+            docId: queryParams[0],
+            docName: remoteFileResponse.document.docName,
+          };
+          if (queryParams.length > 1) {
+            this.remoteFileData.docName = queryParams[2];
+            this.remoteFileData.creators_Id = queryParams[1];
+          }
+        }
+      } catch (error) {
+        console.log(error);
+        pdfLoader.innerHTML =
+          "<h1 style='color: red;'>File or url is corrupted</h1>";
+      }
+    } else {
+      pdfLoader.innerHTML = "<h1 style='color: red;'>No file to show</h1>";
+    }
+  },
   async run(config) {
     this.preferences = new Preferences();
     await this.initialize(config);
@@ -615,8 +736,10 @@ const PDFViewerApplication = {
     if (typeof PDFJSDev === "undefined" || PDFJSDev.test("GENERIC")) {
       const queryString = document.location.search.substring(1);
       const params = parseQueryString(queryString);
-      file = params.get("file") ?? AppOptions.get("defaultUrl");
-      validateFileURL(file);
+      file = params.get("file");
+      // ?? AppOptions.get("defaultUrl");
+      await this.fetchPdf(file);
+      // validateFileURL(file);
     } else if (PDFJSDev.test("MOZCENTRAL")) {
       file = window.location.href;
     } else if (PDFJSDev.test("CHROME")) {
@@ -663,7 +786,7 @@ const PDFViewerApplication = {
       });
     }
 
-    if (!AppOptions.get("supportsDocumentFonts")) {
+    if (!this.supportsDocumentFonts) {
       AppOptions.set("disableFontFace", true);
       this.l10n.get("pdfjs-web-fonts-disabled").then(msg => {
         console.warn(msg);
@@ -686,10 +809,13 @@ const PDFViewerApplication = {
     }
 
     if (typeof PDFJSDev === "undefined" || PDFJSDev.test("GENERIC")) {
-      if (file) {
-        this.open({ url: file });
+      if (this.remoteFileData.base64PdfData) {
+        this.showPdfViewer(this.remoteFileData.base64PdfData);
       } else {
         this._hideViewBookmark();
+        var pdfLoader = document.getElementById("pdfLoader");
+        pdfLoader.innerHTML =
+          "<h1 style='color: red;'>File or url is corrupted</h1>";
       }
     } else if (PDFJSDev.test("MOZCENTRAL || CHROME")) {
       this.setTitleUsingUrl(file, /* downloadUrl = */ file);
@@ -770,19 +896,15 @@ const PDFViewerApplication = {
   },
 
   get supportsPinchToZoom() {
-    return shadow(
-      this,
-      "supportsPinchToZoom",
-      AppOptions.get("supportsPinchToZoom")
-    );
+    return this.externalServices.supportsPinchToZoom;
   },
 
   get supportsIntegratedFind() {
-    return shadow(
-      this,
-      "supportsIntegratedFind",
-      AppOptions.get("supportsIntegratedFind")
-    );
+    return this.externalServices.supportsIntegratedFind;
+  },
+
+  get supportsDocumentFonts() {
+    return this.externalServices.supportsDocumentFonts;
   },
 
   get loadingBar() {
@@ -791,20 +913,8 @@ const PDFViewerApplication = {
     return shadow(this, "loadingBar", bar);
   },
 
-  get supportsMouseWheelZoomCtrlKey() {
-    return shadow(
-      this,
-      "supportsMouseWheelZoomCtrlKey",
-      AppOptions.get("supportsMouseWheelZoomCtrlKey")
-    );
-  },
-
-  get supportsMouseWheelZoomMetaKey() {
-    return shadow(
-      this,
-      "supportsMouseWheelZoomMetaKey",
-      AppOptions.get("supportsMouseWheelZoomMetaKey")
-    );
+  get supportedMouseWheelZoomModifierKeys() {
+    return this.externalServices.supportedMouseWheelZoomModifierKeys;
   },
 
   get supportsCaretBrowsingMode() {
@@ -822,10 +932,10 @@ const PDFViewerApplication = {
 
   setTitleUsingUrl(url = "", downloadUrl = null) {
     this.url = url;
-    this.baseUrl = url.split("#", 1)[0];
+    this.baseUrl = url.split("#")[0];
     if (downloadUrl) {
       this._downloadUrl =
-        downloadUrl === url ? this.baseUrl : downloadUrl.split("#", 1)[0];
+        downloadUrl === url ? this.baseUrl : downloadUrl.split("#")[0];
     }
     if (isDataScheme(url)) {
       this._hideViewBookmark();
@@ -973,20 +1083,26 @@ const PDFViewerApplication = {
         /* downloadUrl = */ args.url
       );
     }
-    // Always set `docBaseUrl` in development mode, and in the (various)
-    // extension builds.
-    if (typeof PDFJSDev === "undefined") {
-      AppOptions.set("docBaseUrl", document.URL.split("#", 1)[0]);
-    } else if (PDFJSDev.test("MOZCENTRAL || CHROME")) {
-      AppOptions.set("docBaseUrl", this.baseUrl);
-    }
-
     // Set the necessary API parameters, using all the available options.
     const apiParams = AppOptions.getAll(OptionKind.API);
-    const loadingTask = getDocument({
+    const params = {
+      canvasMaxAreaInBytes: this.externalServices.canvasMaxAreaInBytes,
       ...apiParams,
       ...args,
-    });
+    };
+
+    if (typeof PDFJSDev === "undefined") {
+      params.docBaseUrl ||= document.URL.split("#")[0];
+    } else if (PDFJSDev.test("MOZCENTRAL || CHROME")) {
+      params.docBaseUrl ||= this.baseUrl;
+    }
+
+    // Check if the PDF data is provided as a base64 encoded string
+    if (args.base64PdfData) {
+      params.data = atob(args.base64PdfData); // Decode base64 data
+    }
+
+    const loadingTask = getDocument(params);
     this.pdfLoadingTask = loadingTask;
 
     loadingTask.onPassword = (updateCallback, reason) => {
@@ -1058,7 +1174,134 @@ const PDFViewerApplication = {
       await this.downloadManager.downloadUrl(url, filename, options);
     }
   },
+  blobToBase64(blob) {
+    return new Promise((resolve, _) => {
+      const reader = new FileReader();
+      reader.onloadend = () => resolve(reader.result.split(",")[1]);
+      reader.readAsDataURL(blob);
+    });
+  },
+  async showPdfViewer(base64PdfData) {
+    this.open({ base64PdfData });
+    // Get references to the elements
+    var pdfLoader = document.getElementById("pdfLoader");
+    var outerContainer = document.getElementById("outerContainer");
+    // Hide the pdfLoader element
+    pdfLoader.style.display = "none";
+    // Show the outerContainer element
+    outerContainer.style.display = "block";
+  },
+  async sendPdf() {
+    this.closeModal();
+    const outerContainer = document.getElementById("outerContainer");
+    outerContainer.style.display = "none";
+    const loadingText = document.getElementById("loadingText");
+    loadingText.textContent = "DOCUMENT IS UPLOADING";
+    const pdfLoader = document.getElementById("pdfLoader");
+    pdfLoader.style.display = "flex";
+    const userAgent = navigator.userAgent;
+    let deviceType;
+    if (/android/i.test(userAgent)) {
+      deviceType = "Android";
+    } else if (/iPad|iPhone|iPod/i.test(userAgent)) {
+      deviceType = "iOS";
+    } else {
+      deviceType = "Desktop";
+    }
+    const ip = await (await fetch("https://api.ipify.org/")).text();
+    if ("geolocation" in navigator) {
+      if (navigator.geolocation) {
+        navigator.geolocation.getCurrentPosition(
+          position => {
+            const geocoder = new window.google.maps.Geocoder();
+            const latLng = new window.google.maps.LatLng(
+              position.coords.latitude,
+              position.coords.longitude
+            );
+            geocoder.geocode({ location: latLng }, async (results, status) => {
+              if (status === "OK" && results.length > 0) {
+                const data = await this.pdfDocument.saveDocument();
+                const blob = new Blob([data], { type: "application/pdf" });
+                const B64Data = await this.blobToBase64(blob);
+                const address = results[0].formatted_address;
+                let email = document.getElementById("email").value;
+                const checkbox = document.getElementById("wish");
+                if (checkbox.checked) email = null;
+                var raw = {
+                  docId: this.remoteFileData.docId,
+                  poId: this.remoteFileData.poId ?? null,
+                  origin: "LSS-SignatureTool_1.0",
+                  forward_email: email,
+                  creators_Id: this.remoteFileData.creators_Id ?? null,
+                  byUser: {
+                    ip,
+                    location: address,
+                    device: deviceType,
+                  },
+                  docObject: [
+                    {
+                      name: this.remoteFileData.docName,
+                      type: this.remoteFileData.type,
+                      B64Data,
+                    },
+                  ],
+                };
+                const requestOptions = {
+                  method: "POST",
+                  headers: {
+                    Accept: "application/json",
+                    "Content-Type": "application/json",
+                  },
+                  body: JSON.stringify(raw),
+                };
 
+                const resp = await (
+                  await fetch(
+                    `${this.apiUrl}/sign/${raw.docId}/signature`,
+                    requestOptions
+                  )
+                ).json();
+                if (resp.success) {
+                  const pdfLoader = document.getElementById("pdfLoader");
+                  pdfLoader.style.display = "none";
+                  // var outerContainer =
+                  //   document.getElementById("outerContainer");
+                  outerContainer.style.display = "none";
+                  const updatedComponent = document.getElementById("uploaded");
+                  updatedComponent.style.display = "flex";
+                  sessionStorage.setItem("docId", raw.docId);
+                }
+              } else {
+                console.log("sssssssssssssssssssssssssssssssssssss");
+              }
+            });
+          },
+          error => {
+            console.log(error);
+            alert(
+              "Turn on location services for your browser from settings to upload signed document."
+            );
+          }
+        );
+      } else {
+        alert("Geolocation API is not supported.");
+      }
+    } else {
+      alert("Geolocation API is not supported.");
+    }
+  },
+  openModal() {
+    const modal = document.getElementById("myModal");
+    modal.style.display = "flex";
+  },
+  closeModal() {
+    const submitBtn = document.getElementById("submit");
+    const errorMessage = document.getElementById("error-message");
+    const modal = document.getElementById("myModal");
+    modal.style.display = "none";
+    errorMessage.style.opacity = 0;
+    submitBtn.disabled = true;
+  },
   async save(options = {}) {
     if (this._saveInProgress) {
       return;
@@ -1066,20 +1309,21 @@ const PDFViewerApplication = {
     this._saveInProgress = true;
     await this.pdfScriptingManager.dispatchWillSave();
 
-    const url = this._downloadUrl,
-      filename = this._docFilename;
     try {
       this._ensureDownloadComplete();
-
-      const data = await this.pdfDocument.saveDocument();
-      const blob = new Blob([data], { type: "application/pdf" });
-
-      await this.downloadManager.download(blob, url, filename, options);
+      // if (this.remoteFileData.type == 2) {
+      this.openModal();
+      const submitBtn = document.getElementById("submit");
+      submitBtn.onclick = () => this.sendPdf();
+      // } else {
+      //   await this.sendPdf();
+      // }
+      // await this.downloadManager.download(blob, url, filename, options);
     } catch (reason) {
       // When the PDF document isn't ready, or the PDF file is still
       // downloading, simply fallback to a "regular" download.
       console.error(`Error when saving the document: ${reason.message}`);
-      await this.download(options);
+      // await this.download(options);
     } finally {
       await this.pdfScriptingManager.dispatchDidSave();
       this._saveInProgress = false;
@@ -1100,7 +1344,7 @@ const PDFViewerApplication = {
     if (this.pdfDocument?.annotationStorage.size > 0) {
       this.save(options);
     } else {
-      this.download(options);
+      // this.download(options);
     }
   },
 
@@ -1212,7 +1456,7 @@ const PDFViewerApplication = {
     this.secondaryToolbar?.setPagesCount(pdfDocument.numPages);
 
     if (typeof PDFJSDev !== "undefined" && PDFJSDev.test("CHROME")) {
-      const baseUrl = location.href.split("#", 1)[0];
+      const baseUrl = location.href.split("#")[0];
       // Ignore "data:"-URLs for performance reasons, even though it may cause
       // internal links to not work perfectly in all cases (see bug 1803050).
       this.pdfLinkService.setDocument(
@@ -1654,6 +1898,8 @@ const PDFViewerApplication = {
       window.addEventListener("beforeunload", beforeUnload);
 
       if (typeof PDFJSDev === "undefined" || PDFJSDev.test("GENERIC")) {
+        const uploadBtn = document.getElementById("download");
+        uploadBtn.disabled = false;
         this._annotationStorageModified = true;
       }
     };
@@ -1661,6 +1907,8 @@ const PDFViewerApplication = {
       window.removeEventListener("beforeunload", beforeUnload);
 
       if (typeof PDFJSDev === "undefined" || PDFJSDev.test("GENERIC")) {
+        const uploadBtn = document.getElementById("download");
+        uploadBtn.disabled = true;
         delete this._annotationStorageModified;
       }
     };
@@ -2576,8 +2824,7 @@ function setZoomDisabledTimeout() {
 function webViewerWheel(evt) {
   const {
     pdfViewer,
-    supportsMouseWheelZoomCtrlKey,
-    supportsMouseWheelZoomMetaKey,
+    supportedMouseWheelZoomModifierKeys,
     supportsPinchToZoom,
   } = PDFViewerApplication;
 
@@ -2616,8 +2863,8 @@ function webViewerWheel(evt) {
 
   if (
     isPinchToZoom ||
-    (evt.ctrlKey && supportsMouseWheelZoomCtrlKey) ||
-    (evt.metaKey && supportsMouseWheelZoomMetaKey)
+    (evt.ctrlKey && supportedMouseWheelZoomModifierKeys.ctrlKey) ||
+    (evt.metaKey && supportedMouseWheelZoomModifierKeys.metaKey)
   ) {
     // Only zoom the pages, not the entire viewer.
     evt.preventDefault();

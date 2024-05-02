@@ -1063,6 +1063,12 @@ function buildGeneric(defines, dir) {
     gulp
       .src("web/compressed.tracemonkey-pldi-09.pdf")
       .pipe(gulp.dest(dir + "web")),
+    gulp
+      .src("web/images/favicon.ico")
+      .pipe(gulp.dest(dir)),
+    gulp
+      .src("web/images/favicon.ico")
+      .pipe(gulp.dest(dir)),
   ]);
 }
 
@@ -1130,6 +1136,8 @@ function buildComponents(defines, dir) {
     "web/images/editor-toolbar-*.svg",
     "web/images/toolbarButton-{editorHighlight,menuArrow}.svg",
     "web/images/cursor-*.svg",
+    "web/images/favicon.ico",
+    "web/images/favicon.ico",
   ];
 
   return merge([

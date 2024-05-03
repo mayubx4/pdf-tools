@@ -1,6 +1,6 @@
 {
   "hosting": {
-    "public": "build/generic",
+    "public": "build/generic-legacy",
     "site":"pdf-tools",
     "ignore": [
       "firebase.json",

@@ -769,20 +769,20 @@ const PDFViewerApplication = {
       appConfig.mainContainer.addEventListener("dragover", function (evt) {
         evt.preventDefault();
 
-        evt.dataTransfer.dropEffect =
-          evt.dataTransfer.effectAllowed === "copy" ? "copy" : "move";
+        evt.dataTransfer.dropEffect ='none'
+          // evt.dataTransfer.effectAllowed === "copy" ? "copy" : "move";
       });
       appConfig.mainContainer.addEventListener("drop", function (evt) {
         evt.preventDefault();
 
-        const { files } = evt.dataTransfer;
-        if (!files || files.length === 0) {
-          return;
-        }
-        eventBus.dispatch("fileinputchange", {
-          source: this,
-          fileInput: evt.dataTransfer,
-        });
+        // const { files } = evt.dataTransfer;
+        // if (!files || files.length === 0) {
+        //   return;
+        // }
+        // eventBus.dispatch("fileinputchange", {
+        //   source: this,
+        //   fileInput: evt.dataTransfer,
+        // });
       });
     }
 

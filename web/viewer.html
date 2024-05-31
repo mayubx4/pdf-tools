@@ -441,6 +441,7 @@ See https://github.com/adobe-type-tools/cmap-resources
         <div
           class="editorParamsToolbar hidden doorHangerRight"
           id="editorStampParamsToolbar"
+          style="display: none;"
         >
           <div class="editorParamsToolbarContainer">
             <button id="editorStampAddImage" class="secondaryToolbarButton" title="Add image" tabindex="108" data-l10n-id="pdfjs-editor-stamp-add-image-button">
@@ -852,10 +853,17 @@ See https://github.com/adobe-type-tools/cmap-resources
                       />
                     </div>
                   </button>
-                  <button id="editorStamp" 
-                  style="display: none;"
-                  class="toolbarButton hidden" disabled="disabled" title="Add or edit images" role="radio" aria-checked="false" aria-controls="editorStampParamsToolbar" tabindex="34" data-l10n-id="pdfjs-editor-stamp-button">
-                    <span data-l10n-id="pdfjs-editor-stamp-button-label">Add or edit images</span>
+                  <button id="editorStamp"
+                  class="toolbarButton toolsBtnText" disabled="disabled" title="Edit" role="radio" aria-checked="false" aria-controls="editorStampParamsToolbar" tabindex="34" data-l10n-id="pdfjs-editor-stamp-button">
+                    <span data-l10n-id="pdfjs-editor-stamp-button-label">Edit</span>
+                    <div style="display: flex; align-items: center">
+                      <span style="margin-right: 10px">Select</span>
+                      <img
+                        src="images/toolbarButton-editor.svg"
+                        alt="sign"
+                        class="toolIcon"
+                      />
+                    </div>
                   </button>
                 </div>
 

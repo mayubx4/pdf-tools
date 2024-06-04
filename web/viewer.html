@@ -51,15 +51,29 @@ See https://github.com/adobe-type-tools/cmap-resources
     <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyA7OooJtcdzcTG52NUX7IYX-qvasM3Dr1Y&libraries=places,geometry&sensor=false"></script>
 
     <script>
+      // Function to open the modal
+      const openUploadModal=()=> {
+        const modal = document.getElementById("uploadModal");
+        modal.style.display = "flex";
+      }
+      const openMergeDocModal=()=> {
+        const modal = document.getElementById("mergeDocModal");
+        modal.style.display = "flex";
+      }
       // Function to close the modal
-      const closeModal=()=> {
+      const closeUploadModal=()=> {
         const errorMessage = document.getElementById("error-message");
-        const modal = document.getElementById("myModal");
+        const modal = document.getElementById("uploadModal");
         const submitBtn = document.getElementById("submit");
         modal.style.display = "none";
         errorMessage.style.opacity = 0;
         submitBtn.disabled = true;
         document.getElementById("email").value = "";
+      }
+      const closeMergeDocModal=()=> {
+        const errorMessage = document.getElementById("error-message");
+        const modal = document.getElementById("mergeDocModal");
+        modal.style.display = "none";
       }
 
       // Function to validate the email
@@ -148,7 +162,8 @@ See https://github.com/adobe-type-tools/cmap-resources
   </head>
 
   <body tabindex="1">
-    <div id="myModal" onclick="closeModal()">
+    
+    <div id="uploadModal" onclick="closeUploadModal()">
       <div class="modal-content" onclick="event.stopPropagation()">
         <h3 style="margin-bottom: 15px; padding: 15px;">Enter E-mail to Receive a Copy of This Document</h2>
         <div id ='emailBox' >
@@ -162,6 +177,20 @@ See https://github.com/adobe-type-tools/cmap-resources
           <p style="font-size: 14px;">I do not wish to receive a copy</p>
         </div>
         <button type="submit" id="submit" disabled>Upload</button>
+      </div>
+    </div>
+
+    <div id="mergeDocModal" onclick="closeMergeDocModal()">
+      <div class="modal-content" onclick="event.stopPropagation()">
+        <h3 style="margin-bottom: 15px; padding: 15px;">Your changes will not be editable after appending</h2>
+        <div id ='' style="display: flex; gap: 20px; justify-content: center; ">
+          
+          <button id="secondaryOpenFile" class="yesMerge" title="Open File" tabindex="51" data-l10n-id="pdfjs-open-file-button">
+              Append
+          </button>
+          <button type="button" id="noMerge" onclick="closeMergeDocModal()">Cancel</button>
+        
+        </div>
       </div>
     </div>
 
@@ -455,11 +484,7 @@ See https://github.com/adobe-type-tools/cmap-resources
           class="secondaryToolbar hidden doorHangerRight"
         >
           <div id="secondaryToolbarButtonContainer">
-<!--#if GENERIC-->
-            <button id="secondaryOpenFile" class="secondaryToolbarButton" title="Open File" tabindex="51" data-l10n-id="pdfjs-open-file-button">
-              <span data-l10n-id="pdfjs-open-file-button-label">Open</span>
-            </button>
-<!--#endif-->
+
 
             <button
               id="secondaryPrint"
@@ -855,16 +880,27 @@ See https://github.com/adobe-type-tools/cmap-resources
                   </button>
                   <button id="editorStamp"
                   class="toolbarButton toolsBtnText" disabled="disabled" title="Edit" role="radio" aria-checked="false" aria-controls="editorStampParamsToolbar" tabindex="34" data-l10n-id="pdfjs-editor-stamp-button">
-                    <span data-l10n-id="pdfjs-editor-stamp-button-label">Edit</span>
-                    <div style="display: flex; align-items: center">
-                      <span style="margin-right: 10px">Select</span>
-                      <img
-                        src="images/toolbarButton-editor.svg"
-                        alt="sign"
-                        class="toolIcon"
-                      />
-                    </div>
-                  </button>
+                  <span data-l10n-id="pdfjs-editor-stamp-button-label">Edit</span>
+                  <div style="display: flex; align-items: center">
+                    <span style="margin-right: 10px">Select</span>
+                    <img
+                    src="images/toolbarButton-editor.svg"
+                    alt="sign"
+                    class="toolIcon"
+                    />
+                  </div>
+                </button>
+                <button onclick="openMergeDocModal()" class="toolbarButton toolsBtnText" >
+                  <span data-l10n-id="pdfjs-open-file-button-label">Open</span>
+                  <div style="display: flex; align-items: center">
+                    <span style="margin-right: 10px">Append</span>
+                    <img
+                    src="images/toolbarButton-merge.svg"
+                    alt="sign"
+                    class="toolIcon"
+                    />
+                  </div>
+                </button>
                 </div>
 
                 <div class="verticalToolbarSeparator"></div>
@@ -902,7 +938,7 @@ See https://github.com/adobe-type-tools/cmap-resources
                   <span data-l10n-id="pdfjs-save-button-label">Save</span>
                 </button>
 
-                <div class="verticalToolbarSeparator hiddenMediumView"></div>
+                <!-- <div class="verticalToolbarSeparator hiddenMediumView"></div> -->
 
                 <button id="secondaryToolbarToggle" 
                 style="display: none;"

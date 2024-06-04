@@ -85,6 +85,7 @@ import { Preferences } from "web-preferences";
 import { SecondaryToolbar } from "web-secondary_toolbar";
 import { Toolbar } from "web-toolbar";
 import { ViewHistory } from "./view_history.js";
+import { PDFDocument } from "../node_modules/pdf-lib/dist/pdf-lib.esm.js";
 
 const FORCE_PAGES_LOADED_TIMEOUT = 10000; // ms
 const WHEEL_ZOOM_DISABLED_TIMEOUT = 1000; // ms
@@ -769,8 +770,8 @@ const PDFViewerApplication = {
       appConfig.mainContainer.addEventListener("dragover", function (evt) {
         evt.preventDefault();
 
-        evt.dataTransfer.dropEffect ='none'
-          // evt.dataTransfer.effectAllowed === "copy" ? "copy" : "move";
+        evt.dataTransfer.dropEffect = "none";
+        // evt.dataTransfer.effectAllowed === "copy" ? "copy" : "move";
       });
       appConfig.mainContainer.addEventListener("drop", function (evt) {
         evt.preventDefault();
@@ -1192,7 +1193,7 @@ const PDFViewerApplication = {
     outerContainer.style.display = "block";
   },
   async sendPdf() {
-    this.closeModal();
+    this.closeUploadModal();
     const outerContainer = document.getElementById("outerContainer");
     outerContainer.style.display = "none";
     const loadingText = document.getElementById("loadingText");
@@ -1290,14 +1291,22 @@ const PDFViewerApplication = {
       alert("Geolocation API is not supported.");
     }
   },
-  openModal() {
-    const modal = document.getElementById("myModal");
+  openUploadModal() {
+    const modal = document.getElementById("uploadModal");
     modal.style.display = "flex";
   },
-  closeModal() {
+  openMergeDocModal() {
+    const modal = document.getElementById("mergeDocModal");
+    modal.style.display = "flex";
+  },
+  closeMergeDocModal() {
+    const modal = document.getElementById("mergeDocModal");
+    modal.style.display = "none";
+  },
+  closeUploadModal() {
     const submitBtn = document.getElementById("submit");
     const errorMessage = document.getElementById("error-message");
-    const modal = document.getElementById("myModal");
+    const modal = document.getElementById("uploadModal");
     modal.style.display = "none";
     errorMessage.style.opacity = 0;
     submitBtn.disabled = true;
@@ -1312,7 +1321,7 @@ const PDFViewerApplication = {
     try {
       this._ensureDownloadComplete();
       // if (this.remoteFileData.type == 2) {
-      this.openModal();
+      this.openUploadModal();
       const submitBtn = document.getElementById("submit");
       submitBtn.onclick = () => this.sendPdf();
       // } else {
@@ -1341,11 +1350,11 @@ const PDFViewerApplication = {
   },
 
   downloadOrSave(options = {}) {
-    if (this.pdfDocument?.annotationStorage.size > 0) {
+    // if (this.pdfDocument?.annotationStorage.size > 0) {
       this.save(options);
-    } else {
+    // } else {
       // this.download(options);
-    }
+    // }
   },
 
   /**
@@ -2630,16 +2639,79 @@ function webViewerHashchange(evt) {
 
 if (typeof PDFJSDev === "undefined" || PDFJSDev.test("GENERIC")) {
   // eslint-disable-next-line no-var
-  var webViewerFileInputChange = function (evt) {
+  const toBase64 = file =>
+    new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.readAsDataURL(file);
+      reader.onload = () => resolve(reader.result);
+      reader.onerror = reject;
+    });
+  // eslint-disable-next-line no-var
+  let encodeBase64FromArrayBuffer = function (buffer) {
+    var binary = "";
+    var bytes = new Uint8Array(buffer);
+    var len = bytes.byteLength;
+    for (var i = 0; i < len; i++) {
+      binary += String.fromCharCode(bytes[i]);
+    }
+    return btoa(binary);
+  };
+  // eslint-disable-next-line no-var
+  let mergePdf = async function (documents) {
+    const mergedPdf = await PDFDocument.create();
+
+    for (let document of documents) {
+      document = await PDFDocument.load(document);
+
+      const copiedPages = await mergedPdf.copyPages(
+        document,
+        document.getPageIndices()
+      );
+      copiedPages.forEach(page => mergedPdf.addPage(page));
+    }
+
+    // Save the merged PDF as bytes
+    const pdfBytes = await mergedPdf.save();
+
+    // Convert the bytes to a Base64-encoded string
+    const base64String = encodeBase64FromArrayBuffer(pdfBytes);
+
+    return base64String;
+  };
+  // eslint-disable-next-line no-var
+  var webViewerFileInputChange = async function (evt) {
     if (PDFViewerApplication.pdfViewer?.isInPresentationMode) {
       return; // Opening a new PDF file isn't supported in Presentation Mode.
     }
-    const file = evt.fileInput.files[0];
 
+    const file = evt.fileInput.files[0];
+    const b64 = await toBase64(file);
+
+    const savedData = await PDFViewerApplication.pdfDocument.saveDocument();
+    const blob = new Blob([savedData], { type: "application/pdf" });
+    const B64Data = await PDFViewerApplication.blobToBase64(blob);
+
+    const data = await mergePdf([B64Data, b64]);
+
+    PDFViewerApplication.pdfViewer.annotationEditorMode = {
+      mode: AnnotationEditorType.NONE,
+    };
+    const isUploadEnabled =
+      PDFViewerApplication.pdfDocument?.annotationStorage.size > 0;
     PDFViewerApplication.open({
-      url: URL.createObjectURL(file),
-      originalUrl: file.name,
+      base64PdfData: data,
     });
+    PDFViewerApplication.closeMergeDocModal();
+    if (isUploadEnabled) enableUploadToolbarBtn();
+  };
+  // eslint-disable-next-line no-var
+  var enableUploadToolbarBtn = () => {
+    const downloadBtn = document.getElementById("download");
+    if (downloadBtn) downloadBtn.disabled = false;
+    else
+      setTimeout(() => {
+        enableUploadToolbarBtn();
+      }, 100);
   };
 
   // eslint-disable-next-line no-var
@@ -2652,6 +2724,7 @@ function webViewerPresentationMode() {
   PDFViewerApplication.requestPresentationMode();
 }
 function webViewerSwitchAnnotationEditorMode(evt) {
+  console.log(evt);
   PDFViewerApplication.pdfViewer.annotationEditorMode = evt;
 }
 function webViewerSwitchAnnotationEditorParams(evt) {

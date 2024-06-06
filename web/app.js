@@ -752,6 +752,7 @@ const PDFViewerApplication = {
       fileInput.id = "fileInput";
       fileInput.hidden = true;
       fileInput.type = "file";
+      fileInput.accept = "application/pdf";
       fileInput.value = null;
       document.body.append(fileInput);
 
@@ -1351,9 +1352,9 @@ const PDFViewerApplication = {
 
   downloadOrSave(options = {}) {
     // if (this.pdfDocument?.annotationStorage.size > 0) {
-      this.save(options);
+    this.save(options);
     // } else {
-      // this.download(options);
+    // this.download(options);
     // }
   },
 

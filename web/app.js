@@ -1910,6 +1910,7 @@ const PDFViewerApplication = {
       if (typeof PDFJSDev === "undefined" || PDFJSDev.test("GENERIC")) {
         const uploadBtn = document.getElementById("download");
         uploadBtn.disabled = false;
+        uploadBtn.title = "Upload";
         this._annotationStorageModified = true;
       }
     };
@@ -1919,6 +1920,7 @@ const PDFViewerApplication = {
       if (typeof PDFJSDev === "undefined" || PDFJSDev.test("GENERIC")) {
         const uploadBtn = document.getElementById("download");
         uploadBtn.disabled = true;
+        uploadBtn.title = "Please sign this document in order to upload.";
         delete this._annotationStorageModified;
       }
     };

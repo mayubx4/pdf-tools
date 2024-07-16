@@ -44,7 +44,7 @@ pdfjs-print-button =
 pdfjs-print-button-label = Print
 pdfjs-save-button =
     .title = Please sign this document in order to upload.
-pdfjs-save-button-label = Submit
+pdfjs-save-button-label = Please sign this document in order to upload.
 
 # Used in Firefox for Android as a tooltip for the download button (“download” is a verb).
 pdfjs-download-button =

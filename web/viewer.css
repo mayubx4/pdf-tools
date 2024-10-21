@@ -908,7 +908,7 @@ button {
     width: 70%;
   }
 }
-@media (max-width: 425px) {
+@media (max-width: 540px) {
   .toolbarButton {
     padding: 2px 4px 0;
   }

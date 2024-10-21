@@ -179,8 +179,8 @@ const PDFViewerApplication = {
   _caretBrowsing: null,
   _isScrolling: false,
   remoteFileData: null,
-  apiUrl: "https://api-golive.loadsecuresystems.com", // stage
-  // apiUrl: "https://api.loadsecuresystems.com", // production
+  apiUrl: "https://api-trackingplus.loadsecuresystems.com", // stage
+  // apiUrl: "https://live.trackingplus.loadsecuresystems.com", // production
 
   // Called once when the document is loaded.
   async initialize(appConfig) {

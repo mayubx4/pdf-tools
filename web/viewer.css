@@ -233,7 +233,21 @@
    font-family: "Oswald";
    color: #244550;
  }
- 
+ .zoom-in-zoom-out {
+  animation: zoom-in-zoom-out 2s ease-out infinite;
+}
+
+@keyframes zoom-in-zoom-out {
+  0% {
+    transform: scale(0.5, 0.5);
+  }
+  50% {
+    transform: scale(1, 1);
+  }
+  100% {
+    transform: scale(0.5, 0.5);
+  }
+}
  #uploadModal,
  #mergeDocModal,
  #phoneNumberModal,

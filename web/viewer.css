@@ -908,7 +908,7 @@
    color: #244550 !important;
    cursor: not-allowed;
  }
- @media (max-width: 540px) {
+ @media (max-width: 767px) {
    /* Apply different styles for screens with a maximum width of 767px (typically mobile devices) */
    .toolsBtnText {
      /* margin: 0 5px !important; */
@@ -922,7 +922,7 @@
      width: 70%;
    }
  }
- @media (max-width: 425px) {
+ @media (max-width: 540px) {
    .toolbarButton {
      padding: 2px 4px 0;
    }

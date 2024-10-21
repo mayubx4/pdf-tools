@@ -834,7 +834,7 @@ See https://github.com/adobe-type-tools/cmap-resources
                 </button>
                   <button
                     id="editorFreeText"
-                    class="toolbarButton toolsBtnText"
+                    class="toolbarButton"
                     disabled="disabled"
                     title="Text"
                     role="radio"
@@ -847,7 +847,7 @@ See https://github.com/adobe-type-tools/cmap-resources
                       >Text</span
                     >
                     <div style="display: flex; align-items: center">
-                      <span style="margin-right: 10px">Text</span>
+                      <span style="margin-right: 10px" class="toolsBtnText">Text</span>
                       <img
                         src="images/toolbarButton-editorFreeText.svg"
                         alt="text"
@@ -857,7 +857,7 @@ See https://github.com/adobe-type-tools/cmap-resources
                   </button>
                   <button
                     id="editorInk"
-                    class="toolbarButton toolsBtnText"
+                    class="toolbarButton"
                     disabled="disabled"
                     title="Draw"
                     role="radio"
@@ -870,7 +870,7 @@ See https://github.com/adobe-type-tools/cmap-resources
                       >Draw</span
                     >
                     <div style="display: flex; align-items: center">
-                      <span style="margin-right: 10px">Sign</span>
+                      <span style="margin-right: 10px" class="toolsBtnText">Sign</span>
                       <img
                         src="images/toolbarButton-editorInk.svg"
                         alt="sign"
@@ -879,10 +879,10 @@ See https://github.com/adobe-type-tools/cmap-resources
                     </div>
                   </button>
                   <button id="editorStamp"
-                  class="toolbarButton toolsBtnText" disabled="disabled" title="Edit" role="radio" aria-checked="false" aria-controls="editorStampParamsToolbar" tabindex="34" data-l10n-id="pdfjs-editor-stamp-button">
+                  class="toolbarButton" disabled="disabled" title="Edit" role="radio" aria-checked="false" aria-controls="editorStampParamsToolbar" tabindex="34" data-l10n-id="pdfjs-editor-stamp-button">
                   <span data-l10n-id="pdfjs-editor-stamp-button-label">Edit</span>
                   <div style="display: flex; align-items: center">
-                    <span style="margin-right: 10px">Select</span>
+                    <span style="margin-right: 10px" class="toolsBtnText">Select</span>
                     <img
                     src="images/toolbarButton-editor.svg"
                     alt="sign"
@@ -890,10 +890,10 @@ See https://github.com/adobe-type-tools/cmap-resources
                     />
                   </div>
                 </button>
-                <button onclick="openMergeDocModal()" class="toolbarButton toolsBtnText" >
+                <button onclick="openMergeDocModal()" class="toolbarButton" >
                   <span data-l10n-id="pdfjs-open-file-button-label">Open</span>
                   <div style="display: flex; align-items: center">
-                    <span style="margin-right: 10px">Append</span>
+                    <span style="margin-right: 10px" class="toolsBtnText">Append</span>
                     <img
                     src="images/toolbarButton-merge.svg"
                     alt="sign"
@@ -907,14 +907,14 @@ See https://github.com/adobe-type-tools/cmap-resources
 
                 <button
                   id="download"
-                  class="toolbarButton toolsBtnText"
+                  class="toolbarButton"
                   title="Please sign this document in order to upload."
                   tabindex="33"
                   data-l10n-id="pdfjs-save-button"
                   disabled
                 >
                   <div style="display: flex; align-items: center">
-                    <span style="margin-right: 10px">Upload</span>
+                    <span style="margin-right: 10px" class="toolsBtnText">Upload</span>
                     <img
                       src="images/toolbarButton-openFile.svg"
                       alt="download"

@@ -878,6 +878,12 @@ button {
   background-color: var(--button-hover-color);
   color: white;
 }
+.toolbarButton:not(:disabled):not([aria-checked="true"]):is(:hover )  {
+  cursor: pointer;
+}
+.toolbarButton:not(:disabled):not([aria-checked="true"]):is(:hover ) .toolsBtnText {
+  color: white;
+}
 .toolsBtnText {
   display: flex;
   color: #244550;

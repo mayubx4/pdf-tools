@@ -52,14 +52,11 @@ See https://github.com/adobe-type-tools/cmap-resources
 
     <script>
       // Function to open the modal
-      const openUploadModal=()=> {
-        const modal = document.getElementById("uploadModal");
-        modal.style.display = "flex";
-      }
       const openMergeDocModal=()=> {
         const modal = document.getElementById("mergeDocModal");
         modal.style.display = "flex";
       }
+      
       // Function to close the modal
       const closeUploadModal=()=> {
         const errorMessage = document.getElementById("error-message");
@@ -71,11 +68,10 @@ See https://github.com/adobe-type-tools/cmap-resources
         document.getElementById("email").value = "";
       }
       const closeMergeDocModal=()=> {
-        const errorMessage = document.getElementById("error-message");
         const modal = document.getElementById("mergeDocModal");
         modal.style.display = "none";
       }
-
+      
       // Function to validate the email
       const validateEmail=()=> {
         const submitButton = document.getElementById("submit");
@@ -110,6 +106,86 @@ See https://github.com/adobe-type-tools/cmap-resources
           else if (!emailPattern.test(email))
             submitBtn.disabled = true;
         }
+        
+      const handleChangePhone=(value)=>{
+        const countryCode = document.getElementById('countryCode').value;
+        const phone = document.getElementById('phone');
+        const submitPhone = document.getElementById('submitPhone');
+
+        const sanitizedValue = value.replace(/\D/g, '');  // filter/remove non numeric values
+        console.log(phone.value,value,sanitizedValue);
+
+        submitPhone.disabled=sanitizedValue.length < 10 
+        
+        if(sanitizedValue.length > 10)
+          phone.value = sanitizedValue.substring(0,10);
+        else
+          phone.value = sanitizedValue;
+        
+        // if(phone.value === '+')
+        // phone.value = countryCode;
+        // else if (!phone.value.startsWith(countryCode) ) {
+        //   phone.value = countryCode + phone.value.replace(/^\+\d+/, '');
+        // }
+  }
+const handleChangeOtp=(value)=>{
+  const otp = document.getElementById('otp');
+  const verifyOtpButton = document.getElementById('verifyOtp');
+  const sanitizedValue = value.replace(/\D/g, '');  // filter/remove non numeric values
+  
+  verifyOtpButton.disabled = value.length < 6;
+  
+  const otpError=document.getElementById('otpError')
+  otpError.textContent=''
+
+  if(sanitizedValue.length > 6)
+    otp.value = sanitizedValue.substring(0,6);
+  else{
+    otp.value = sanitizedValue;
+  }
+}
+      const submitPhone=async()=>{
+        const countryCode = document.getElementById('countryCode').value;
+        const phoneNumber = document.getElementById('phone').value;
+          console.log('Phone number:',countryCode+ phoneNumber);
+          window.PDFViewerApplication.submitPhone(countryCode+phoneNumber)
+          setOtpTimer()
+      }
+      const verifyOtp=async()=>{
+          const otp = document.getElementById('otp').value;
+          console.log('otp:', otp);
+          window.PDFViewerApplication.verifyOtp(otp)
+      }
+      const setOtpTimer = () => {
+        let countdown = 60;
+        const resendButton = document.getElementById('resendButton');
+        const resendOtpSpan = document.getElementById('resendOtp');
+
+        const timer = setInterval(() => {
+          if (countdown > 0) {
+            countdown--;
+            resendOtpSpan.textContent = countdown;
+          } else {
+            clearInterval(timer);
+            resendButton.disabled = false;
+            resendOtpSpan.textContent = ''; // Clear the span text
+            resendButton.textContent = 'Resend OTP'; // Update button text if needed
+          }
+        }, 1000);
+      }
+      const resendOtp=()=>{
+        submitPhone()
+        const resendButton = document.getElementById('resendButton');
+        resendButton.innerHTML= 'Resend OTP (<span id="resendOtp">60</span>)'
+        resendButton.style.backgroundColor= "#ccc"
+        setOtpTimer()
+      }
+      function handleCountryCodeChange() {
+        const countryCode = document.getElementById('countryCode').value;
+        console.log('Selected country code:', countryCode);
+        const phone = document.getElementById('phone');
+        phone.value=countryCode
+      }
     </script>
 <!--#endif-->
 
@@ -157,6 +233,7 @@ See https://github.com/adobe-type-tools/cmap-resources
         }
       }
     </script>
+    
     <script src="viewer.js" type="module"></script>
 <!--#endif-->
   </head>
@@ -166,9 +243,9 @@ See https://github.com/adobe-type-tools/cmap-resources
     <div id="uploadModal" onclick="closeUploadModal()">
       <div class="modal-content" onclick="event.stopPropagation()">
         <h3 style="margin-bottom: 15px; padding: 15px;">Enter E-mail to Receive a Copy of This Document</h2>
-        <div id ='emailBox' >
+        <div class="inputWrapper" >
           <label for="email">Email:</label>
-          <input type="text" id="email" oninput="validateEmail()" />
+          <input type="text" id="email" class="inputField" oninput="validateEmail()" />
         </div>
         <div id="error-message">*Please enter a valid email address.</div>
         <h3>OR</h3>
@@ -177,6 +254,72 @@ See https://github.com/adobe-type-tools/cmap-resources
           <p style="font-size: 14px;">I do not wish to receive a copy</p>
         </div>
         <button type="submit" id="submit" disabled>Upload</button>
+      </div>
+    </div>
+
+    <div id="phoneNumberModal">
+      <div class="modal-content" onclick="event.stopPropagation()">
+        <h3 style="margin-bottom: 15px; padding: 15px;">Please enter your phone number to verify</h3>
+        <div class="inputWrapper">
+          <label for="phone">Phone:</label>
+          <div >
+
+            <select 
+            id="countryCode" 
+            class="inputField" 
+            onchange="handleCountryCodeChange()" 
+            style="padding: 8px 10px; 
+            border: 1px solid #ccc; 
+            border-radius: 4px; 
+            background-color: #f9f9f9; 
+            color: #333; 
+            font-size: 14px;
+            width: 70px;">
+              <option value="+1">+1</option>
+              <option value="+52">+52</option>
+            </select>
+          </div>
+          <div style="display: flex; gap: 5px; align-items: center;  width: 100%;">
+            <input type="text" id="phone" class="inputField" style="text-align: left;"
+            oninput="handleChangePhone(this.value)"
+            />
+            <!-- placeholder="Phone (no country code)" -->
+          </div>
+        </div>
+        <div style="display: flex; gap: 20px; justify-content: center;">
+          <button id="submitPhone" disabled class="yesMerge" onclick="submitPhone()">
+            Submit
+          </button>
+        </div>
+      </div>
+    </div>
+    <div id="otpModal" >
+      <div class="modal-content" onclick="event.stopPropagation()">
+        <h3 style="margin-bottom: 15px; padding: 15px;">Please enter OTP number you have received</h2>
+          <div class="inputWrapper" >
+            <label for="phone">OTP:</label>
+            <input type="text" id="otp" class="inputField" oninput="handleChangeOtp(this.value)"
+            placeholder="XXXXXX"/>
+          </div>
+          <p id="otpError" style="color: red;"></p>
+          <div style="display: flex; margin-top: 10px;">
+            <button 
+            id="resendButton" 
+            disabled 
+            class="yesMerge"
+            style="font-size: 14px; padding-block: 5px;"
+            onclick="resendOtp()"
+            >
+            <!-- style="background-color: #ccc; color: white; border: none; border-radius: 4px; padding: 10px; cursor: not-allowed; font-size: 16px;"  -->
+              Resend OTP (<span id="resendOtp">60</span>) <!-- put countdown value here  --> 
+            </button>
+            
+          </div>
+        <div  style="display: flex; gap: 20px; justify-content: center; ">
+          <button id="verifyOtp" disabled class="yesMerge" onclick="verifyOtp()">
+              Verify
+          </button>        
+        </div>
       </div>
     </div>
 

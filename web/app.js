@@ -179,6 +179,8 @@ const PDFViewerApplication = {
   _caretBrowsing: null,
   _isScrolling: false,
   remoteFileData: null,
+  phoneNumber: "",
+  apiKey: "",
   apiUrl: "https://api-golive.loadsecuresystems.com", // stage
   // apiUrl: "https://api.loadsecuresystems.com", // production
 
@@ -702,21 +704,33 @@ const PDFViewerApplication = {
           const uploaded = document.getElementById("uploaded");
           uploaded.style.display = "flex";
         } else {
-          let remoteFileResponse = await (
-            await fetch(`${this.apiUrl}/load/${queryParams[0]}/signature`)
-          ).json();
+          this.apiKey = queryParams[0];
+          let remoteFileResponse = await fetch(
+            `${this.apiUrl}/load/signature/${queryParams[0]}`,
+            {
+              credentials: "include",
+            }
+          );
+          remoteFileResponse = await remoteFileResponse.json();
           console.log(remoteFileResponse);
-          this.remoteFileData = {
-            url: file,
-            base64PdfData: remoteFileResponse.document.docData,
-            poId: remoteFileResponse.document.p,
-            type: remoteFileResponse.document.t,
-            docId: queryParams[0],
-            docName: remoteFileResponse.document.docName,
-          };
-          if (queryParams.length > 1) {
-            this.remoteFileData.docName = queryParams[2];
-            this.remoteFileData.creators_Id = queryParams[1];
+
+          if (remoteFileResponse.redirectUrl)
+            window.location.href = remoteFileResponse.redirectUrl;
+          else if (remoteFileResponse.requiredPhoneNumber) {
+            this.openPhoneNumberModal();
+          } else {
+            this.remoteFileData = {
+              url: file,
+              base64PdfData: remoteFileResponse.document.docData,
+              poId: remoteFileResponse.document.p,
+              type: remoteFileResponse.document.t,
+              // docId: remoteFileResponse.document.d,
+              docName: remoteFileResponse.document.docName,
+            };
+            if (queryParams.length > 1) {
+              this.remoteFileData.docName = queryParams[1];
+              // this.remoteFileData.creators_Id = queryParams[1];
+            }
           }
         }
       } catch (error) {
@@ -726,6 +740,50 @@ const PDFViewerApplication = {
       }
     } else {
       pdfLoader.innerHTML = "<h1 style='color: red;'>No file to show</h1>";
+    }
+  },
+  async submitPhone(phoneNumber) {
+    this.phoneNumber = phoneNumber;
+    console.log(phoneNumber);
+    
+    const resp = await (
+      await fetch(`${this.apiUrl}/clearme/users/otp/request/${this.apiKey}`, {
+        method: "POST",
+        headers: {
+          Accept: "application/json",
+          "Content-Type": "application/json", // Specify that the body is JSON
+        },
+        credentials: "include",
+        body: JSON.stringify({ phoneNumber }),
+      })
+    ).json();
+    console.log(resp);
+    if (resp.redirectUrl) window.location.href = resp.redirectUrl;
+    else {
+      this.closePhoneNumberModal();
+      this.openOtpModal();
+    }
+  },
+  async verifyOtp(otp) {
+    let resp = await fetch(
+      `${this.apiUrl}/clearme/users/otp/verify/${this.apiKey}`,
+      {
+        method: "POST",
+        credentials: "include",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ code: otp, phoneNumber: this.phoneNumber }),
+      }
+    );
+    resp = await resp.json();
+    console.log(resp);
+    if (resp.status) {
+      window.location.reload();
+    }
+    else{
+      const otpError=document.getElementById('otpError')
+      otpError.textContent=resp.message
     }
   },
   async run(config) {
@@ -811,7 +869,7 @@ const PDFViewerApplication = {
     }
 
     if (typeof PDFJSDev === "undefined" || PDFJSDev.test("GENERIC")) {
-      if (this.remoteFileData.base64PdfData) {
+      if (this.remoteFileData?.base64PdfData) {
         this.showPdfViewer(this.remoteFileData.base64PdfData);
       } else {
         this._hideViewBookmark();
@@ -1249,6 +1307,7 @@ const PDFViewerApplication = {
                   ],
                 };
                 const requestOptions = {
+                  credentials: "include",
                   method: "POST",
                   headers: {
                     Accept: "application/json",
@@ -1259,7 +1318,7 @@ const PDFViewerApplication = {
 
                 const resp = await (
                   await fetch(
-                    `${this.apiUrl}/sign/${raw.docId}/signature`,
+                    `${this.apiUrl}/sign/signature/${this.apiKey}`,
                     requestOptions
                   )
                 ).json();
@@ -1300,8 +1359,24 @@ const PDFViewerApplication = {
     const modal = document.getElementById("mergeDocModal");
     modal.style.display = "flex";
   },
+  openPhoneNumberModal() {
+    const modal = document.getElementById("phoneNumberModal");
+    modal.style.display = "flex";
+  },
+  openOtpModal() {
+    const modal = document.getElementById("otpModal");
+    modal.style.display = "flex";
+  },
   closeMergeDocModal() {
     const modal = document.getElementById("mergeDocModal");
+    modal.style.display = "none";
+  },
+  closePhoneNumberModal() {
+    const modal = document.getElementById("phoneNumberModal");
+    modal.style.display = "none";
+  },
+  closeOtpModal() {
+    const modal = document.getElementById("otpModal");
     modal.style.display = "none";
   },
   closeUploadModal() {

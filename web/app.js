@@ -698,8 +698,8 @@ const PDFViewerApplication = {
     if (file) {
       try {
         const queryParams = file.split("/");
-        const docID = sessionStorage.getItem("docId");
-        if (docID == queryParams[0]) {
+        const docKey = sessionStorage.getItem("docKey");
+        if (docKey == queryParams[0]) {
           pdfLoader.style.display = "none";
           const uploaded = document.getElementById("uploaded");
           uploaded.style.display = "flex";
@@ -724,7 +724,7 @@ const PDFViewerApplication = {
               base64PdfData: remoteFileResponse.document.docData,
               poId: remoteFileResponse.document.p,
               type: remoteFileResponse.document.t,
-              // docId: remoteFileResponse.document.d,
+              docId: remoteFileResponse.document.d,
               docName: remoteFileResponse.document.docName,
             };
             if (queryParams.length > 1) {
@@ -745,7 +745,7 @@ const PDFViewerApplication = {
   async submitPhone(phoneNumber) {
     this.phoneNumber = phoneNumber;
     console.log(phoneNumber);
-    
+
     const resp = await (
       await fetch(`${this.apiUrl}/clearme/users/otp/request/${this.apiKey}`, {
         method: "POST",
@@ -780,10 +780,9 @@ const PDFViewerApplication = {
     console.log(resp);
     if (resp.status) {
       window.location.reload();
-    }
-    else{
-      const otpError=document.getElementById('otpError')
-      otpError.textContent=resp.message
+    } else {
+      const otpError = document.getElementById("otpError");
+      otpError.textContent = resp.message;
     }
   },
   async run(config) {
@@ -1330,7 +1329,8 @@ const PDFViewerApplication = {
                   outerContainer.style.display = "none";
                   const updatedComponent = document.getElementById("uploaded");
                   updatedComponent.style.display = "flex";
-                  sessionStorage.setItem("docId", raw.docId);
+
+                  sessionStorage.setItem("docKey", this.apiKey);
                 }
               } else {
                 console.log("sssssssssssssssssssssssssssssssssssss");

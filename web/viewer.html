@@ -166,9 +166,9 @@ See https://github.com/adobe-type-tools/cmap-resources
     <div id="uploadModal" onclick="closeUploadModal()">
       <div class="modal-content" onclick="event.stopPropagation()">
         <h3 style="margin-bottom: 15px; padding: 15px;">Enter E-mail to Receive a Copy of This Document</h2>
-        <div id ='emailBox' >
+        <div id='emailBox' class="inputWrapper">
           <label for="email">Email:</label>
-          <input type="text" id="email" oninput="validateEmail()" />
+          <input type="text" id="email" class="inputField" oninput="validateEmail()" />
         </div>
         <div id="error-message">*Please enter a valid email address.</div>
         <h3>OR</h3>
